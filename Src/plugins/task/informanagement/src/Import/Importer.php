@@ -546,7 +546,15 @@ final class Importer
 		$images = json_decode((string) $article->images, true) ?: [];
 		$old    = (string) ($images['image_fulltext'] ?? '');
 
-		$response = $this->http()->get($url, [], 30);
+		$response = $this->downloadImage($url);
+
+		if ($response === null)
+		{
+			($this->log)(\sprintf('Afbeelding van artikel %d overgeslagen: doorverwijzing buiten Informanagement.', $item->id), 'warning');
+
+			return $current;
+		}
+
 		$body     = (string) $response->getBody();
 		$mime     = strtolower(trim(explode(';', $response->getHeaderLine('Content-Type'))[0]));
 		$size     = $body !== '' && \strlen($body) <= self::MAX_IMAGE ? getimagesizefromstring($body) : false;
@@ -643,13 +651,13 @@ final class Importer
 	 */
 	private function imageUrl(string $url, int $width, bool $jpeg): ?string
 	{
-		$parts = parse_url($url);
-		$host  = strtolower($parts['host'] ?? '');
-
-		if (($parts['scheme'] ?? '') !== 'https' || ($host !== 'informanagement.com' && !str_ends_with($host, '.informanagement.com')))
+		if (!$this->isInformanagementUrl($url))
 		{
 			return null;
 		}
+
+		$parts = parse_url($url);
+		$host  = strtolower($parts['host'] ?? '');
 
 		parse_str($parts['query'] ?? '', $query);
 		$query['width'] = max(200, min(2400, $width));
@@ -661,6 +669,74 @@ final class Importer
 		}
 
 		return 'https://' . $host . ($parts['path'] ?? '') . '?' . http_build_query($query);
+	}
+
+	/**
+	 * Whether a URL is https on informanagement.com or one of its subdomains.
+	 *
+	 * @param   string  $url  The URL.
+	 *
+	 * @return  boolean
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function isInformanagementUrl(string $url): bool
+	{
+		$parts = parse_url($url);
+
+		if ($parts === false || ($parts['scheme'] ?? '') !== 'https' || isset($parts['user']) || isset($parts['pass'])
+			|| (isset($parts['port']) && $parts['port'] !== 443))
+		{
+			return false;
+		}
+
+		$host = strtolower($parts['host'] ?? '');
+
+		return $host === 'informanagement.com' || str_ends_with($host, '.informanagement.com');
+	}
+
+	/**
+	 * Downloads an image, following redirects only while they stay on Informanagement over https.
+	 *
+	 * The HTTP client itself does not follow redirects here: a redirect to another host (or an
+	 * internal address) must not be fetched.
+	 *
+	 * @param   string  $url  The image URL, already checked with isInformanagementUrl().
+	 *
+	 * @return  ?\Joomla\Http\Response  The final response, or null when a redirect leaves Informanagement or there are too many.
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function downloadImage(string $url): ?\Joomla\Http\Response
+	{
+		$http = $this->http(false);
+
+		for ($hops = 0; $hops <= 3; $hops++)
+		{
+			$response = $http->get($url, [], 30);
+			$status   = $response->getStatusCode();
+			$location = trim($response->getHeaderLine('Location'));
+
+			if ($status < 300 || $status >= 400 || $location === '')
+			{
+				return $response;
+			}
+
+			// A root-relative Location stays on the same host.
+			if (str_starts_with($location, '/') && !str_starts_with($location, '//'))
+			{
+				$location = 'https://' . strtolower((string) parse_url($url, PHP_URL_HOST)) . $location;
+			}
+
+			if (!$this->isInformanagementUrl($location))
+			{
+				return null;
+			}
+
+			$url = $location;
+		}
+
+		return null;
 	}
 
 	/**
@@ -712,16 +788,26 @@ final class Importer
 	/**
 	 * An HTTP client with the Joomla user agent.
 	 *
+	 * @param   bool  $followRedirects  False: the client returns a redirect instead of following it.
+	 *
 	 * @return  \Joomla\Http\Http
 	 *
 	 * @since   1.0.0
 	 */
-	private function http(): \Joomla\Http\Http
+	private function http(bool $followRedirects = true): \Joomla\Http\Http
 	{
 		$options = new Registry;
 		$options->set('userAgent', (new Version)->getUserAgent('Joomla', true, false));
 
-		return $this->httpFactory->getHttp($options);
+		if ($followRedirects)
+		{
+			return $this->httpFactory->getHttp($options);
+		}
+
+		// The Socket transport always follows redirects; Curl and Stream honour follow_location.
+		$options->set('follow_location', false);
+
+		return $this->httpFactory->getHttp($options, ['Curl', 'Stream']);
 	}
 
 	/**
