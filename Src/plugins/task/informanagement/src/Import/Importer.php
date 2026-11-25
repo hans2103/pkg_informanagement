@@ -620,7 +620,7 @@ final class Importer
 	 *
 	 * @return  ?string  The resolved path, or null when it is no file inside images/informanagement.
 	 *
-	 * @since   __DEPLOY_VERSION__
+	 * @since   26.48.1
 	 */
 	private function ownImage(string $relative): ?string
 	{
@@ -681,7 +681,7 @@ final class Importer
 	 *
 	 * @return  boolean
 	 *
-	 * @since   __DEPLOY_VERSION__
+	 * @since   26.48.1
 	 */
 	private function isInformanagementUrl(string $url): bool
 	{
@@ -711,7 +711,7 @@ final class Importer
 	 * @throws  \RuntimeException  When a redirect leaves Informanagement, there are too many, the image is
 	 *                             larger than MAX_IMAGE or the download fails.
 	 *
-	 * @since   __DEPLOY_VERSION__
+	 * @since   26.48.1
 	 */
 	private function downloadImage(string $url): \Joomla\Http\Response
 	{
@@ -768,7 +768,7 @@ final class Importer
 	 *
 	 * @return  \Joomla\Http\Http
 	 *
-	 * @since   __DEPLOY_VERSION__
+	 * @since   26.48.1
 	 */
 	private function imageHttp(bool &$tooLarge): \Joomla\Http\Http
 	{
