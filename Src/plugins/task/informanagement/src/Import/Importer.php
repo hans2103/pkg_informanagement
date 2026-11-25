@@ -546,7 +546,18 @@ final class Importer
 		$images = json_decode((string) $article->images, true) ?: [];
 		$old    = (string) ($images['image_fulltext'] ?? '');
 
-		$response = $this->http()->get($url, [], 30);
+		// The image is optional: a failed download skips it, not the whole article.
+		try
+		{
+			$response = $this->downloadImage($url);
+		}
+		catch (\Throwable $e)
+		{
+			($this->log)(\sprintf('Afbeelding van artikel %d overgeslagen: %s', $item->id, $e->getMessage()), 'warning');
+
+			return $current;
+		}
+
 		$body     = (string) $response->getBody();
 		$mime     = strtolower(trim(explode(';', $response->getHeaderLine('Content-Type'))[0]));
 		$size     = $body !== '' && \strlen($body) <= self::MAX_IMAGE ? getimagesizefromstring($body) : false;
@@ -589,14 +600,44 @@ final class Importer
 
 		// Remove the previous download, only if it was ours and is not the same file.
 		$oldPath = strtok($old, '#');
+		$oldFile = \is_string($oldPath) && $oldPath !== $relative ? $this->ownImage($oldPath) : null;
 
-		if (\is_string($oldPath) && $oldPath !== $relative
-			&& str_starts_with($oldPath, self::IMAGE_DIR . '/') && is_file(JPATH_ROOT . '/' . $oldPath))
+		if ($oldFile !== null && $oldFile !== realpath($absolute))
 		{
-			File::delete(JPATH_ROOT . '/' . $oldPath);
+			File::delete($oldFile);
 		}
 
 		return $key;
+	}
+
+	/**
+	 * The absolute path of an image this plugin downloaded, so it may be deleted.
+	 *
+	 * The path comes from the article's images field, which editors can change: a path like
+	 * images/informanagement/../../configuration.php must never resolve to a file outside the folder.
+	 *
+	 * @param   string  $relative  Path relative to the site root, as stored in the article.
+	 *
+	 * @return  ?string  The resolved path, or null when it is no file inside images/informanagement.
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function ownImage(string $relative): ?string
+	{
+		if (!str_starts_with($relative, self::IMAGE_DIR . '/') || str_contains($relative, '..') || str_contains($relative, "\0"))
+		{
+			return null;
+		}
+
+		$folder = realpath(JPATH_ROOT . '/' . self::IMAGE_DIR);
+		$file   = realpath(JPATH_ROOT . '/' . $relative);
+
+		if ($folder === false || $file === false || !is_file($file) || !str_starts_with($file, $folder . \DIRECTORY_SEPARATOR))
+		{
+			return null;
+		}
+
+		return $file;
 	}
 
 	/**
@@ -613,13 +654,13 @@ final class Importer
 	 */
 	private function imageUrl(string $url, int $width, bool $jpeg): ?string
 	{
-		$parts = parse_url($url);
-		$host  = strtolower($parts['host'] ?? '');
-
-		if (($parts['scheme'] ?? '') !== 'https' || ($host !== 'informanagement.com' && !str_ends_with($host, '.informanagement.com')))
+		if (!$this->isInformanagementUrl($url))
 		{
 			return null;
 		}
+
+		$parts = parse_url($url);
+		$host  = strtolower($parts['host'] ?? '');
 
 		parse_str($parts['query'] ?? '', $query);
 		$query['width'] = max(200, min(2400, $width));
@@ -631,6 +672,130 @@ final class Importer
 		}
 
 		return 'https://' . $host . ($parts['path'] ?? '') . '?' . http_build_query($query);
+	}
+
+	/**
+	 * Whether a URL is https on informanagement.com or one of its subdomains.
+	 *
+	 * @param   string  $url  The URL.
+	 *
+	 * @return  boolean
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function isInformanagementUrl(string $url): bool
+	{
+		$parts = parse_url($url);
+
+		if ($parts === false || ($parts['scheme'] ?? '') !== 'https' || isset($parts['user']) || isset($parts['pass'])
+			|| (isset($parts['port']) && $parts['port'] !== 443))
+		{
+			return false;
+		}
+
+		$host = strtolower($parts['host'] ?? '');
+
+		return $host === 'informanagement.com' || str_ends_with($host, '.informanagement.com');
+	}
+
+	/**
+	 * Downloads an image, following redirects only while they stay on Informanagement over https.
+	 *
+	 * The HTTP client itself does not follow redirects here: a redirect to another host (or an
+	 * internal address) must not be fetched.
+	 *
+	 * @param   string  $url  The image URL, already checked with isInformanagementUrl().
+	 *
+	 * @return  \Joomla\Http\Response  The final response.
+	 *
+	 * @throws  \RuntimeException  When a redirect leaves Informanagement, there are too many, the image is
+	 *                             larger than MAX_IMAGE or the download fails.
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function downloadImage(string $url): \Joomla\Http\Response
+	{
+		$tooLarge = false;
+		$http     = $this->imageHttp($tooLarge);
+
+		for ($hops = 0; $hops <= 3; $hops++)
+		{
+			try
+			{
+				$response = $http->get($url, [], 30);
+			}
+			catch (\RuntimeException $e)
+			{
+				// The callback, or CURLOPT_MAXFILESIZE ("Maximum file size exceeded").
+				$large = $tooLarge || stripos($e->getMessage(), 'file size') !== false;
+
+				throw $large ? new \RuntimeException('groter dan 8 MB.', 0, $e) : $e;
+			}
+
+			$status   = $response->getStatusCode();
+			$location = trim($response->getHeaderLine('Location'));
+
+			if ($status < 300 || $status >= 400 || $location === '')
+			{
+				return $response;
+			}
+
+			// A root-relative Location stays on the same host.
+			if (str_starts_with($location, '/') && !str_starts_with($location, '//'))
+			{
+				$location = 'https://' . strtolower((string) parse_url($url, PHP_URL_HOST)) . $location;
+			}
+
+			if (!$this->isInformanagementUrl($location))
+			{
+				throw new \RuntimeException('doorverwijzing buiten Informanagement.');
+			}
+
+			$url = $location;
+		}
+
+		throw new \RuntimeException('te veel doorverwijzingen.');
+	}
+
+	/**
+	 * The HTTP client for images: no automatic redirects, and curl stops a download above MAX_IMAGE.
+	 *
+	 * Without the limit the whole response would be in memory before its size is checked. The Socket
+	 * transport always follows redirects, so only Curl and Stream are used; Stream (only without curl)
+	 * has no size limit during the download, the size is then checked afterwards.
+	 *
+	 * @param   bool  $tooLarge  Set to true when curl stopped a download for its size.
+	 *
+	 * @return  \Joomla\Http\Http
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function imageHttp(bool &$tooLarge): \Joomla\Http\Http
+	{
+		$max = self::MAX_IMAGE;
+
+		// A plain array: a Registry would read the key transport.curl as a path.
+		$options = [
+			'userAgent'       => (new Version)->getUserAgent('Joomla', true, false),
+			'follow_location' => false,
+			'transport.curl'  => [
+				// Refused at once when the server announces the size.
+				\CURLOPT_MAXFILESIZE      => $max,
+				\CURLOPT_NOPROGRESS       => false,
+				\CURLOPT_XFERINFOFUNCTION => static function ($ch, int $total, int $now) use ($max, &$tooLarge): int {
+					if ($total > $max || $now > $max)
+					{
+						$tooLarge = true;
+
+						return 1;
+					}
+
+					return 0;
+				},
+			],
+		];
+
+		return $this->httpFactory->getHttp($options, ['Curl', 'Stream']);
 	}
 
 	/**
@@ -680,7 +845,7 @@ final class Importer
 	}
 
 	/**
-	 * An HTTP client with the Joomla user agent.
+	 * An HTTP client with the Joomla user agent, for the feeds.
 	 *
 	 * @return  \Joomla\Http\Http
 	 *
