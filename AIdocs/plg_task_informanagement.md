@@ -2,6 +2,7 @@
 
 ### History
 - 2026-11-25: page created when the package moved from jacc.nl to its own public repo; includes the failure threshold (`notify_after`, `FailureCounter`) from 1.0.2
+- 2026-11-25: the previous image is only deleted when its resolved path lies inside `images/informanagement` (`ownImage()`)
 
 Last updated: 2026-11-25
 Verified against: 779881a
@@ -55,7 +56,7 @@ Scheduler routine `informanagement.import` (*Import Informanagement news*): impo
 
 - `sanitizer()`: `InputFilter` with a fixed list of tags (`p`, headings, lists, tables, `a`, …) and attributes (`href`, `title`, `scope`, `colspan`, `rowspan`); no inline styles.
 - `ArticleMapper` splits after the first paragraph (intro text and meta description, max 160 characters) and appends `<p class="c-im-source">Bron: agency | character | number | date</p>` (label per location; the date is the feed's own calendar date).
-- Images: downloaded once to `images/informanagement/YYYY/MM/`, at `image_width`, as JPEG quality 80 when `image_jpeg` is on (`format=webp` gives a 500 at the CDN). Checked: status 200, allowed MIME, at most 8 MB, `getimagesizefromstring()` agrees with the MIME. The link row stores the URL with its options; another width or format means a new download.
+- Images: downloaded once to `images/informanagement/YYYY/MM/`, at `image_width`, as JPEG quality 80 when `image_jpeg` is on (`format=webp` gives a 500 at the CDN). Checked: status 200, allowed MIME, at most 8 MB, `getimagesizefromstring()` agrees with the MIME. The link row stores the URL with its options; another width or format means a new download. The previous image is deleted only via `ownImage()`: no `..`, and `realpath()` must lie inside `images/informanagement` (editors can change the path in the article).
 
 ## Status and the failure threshold
 

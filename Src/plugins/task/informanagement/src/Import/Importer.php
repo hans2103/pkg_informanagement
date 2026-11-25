@@ -589,14 +589,44 @@ final class Importer
 
 		// Remove the previous download, only if it was ours and is not the same file.
 		$oldPath = strtok($old, '#');
+		$oldFile = \is_string($oldPath) && $oldPath !== $relative ? $this->ownImage($oldPath) : null;
 
-		if (\is_string($oldPath) && $oldPath !== $relative
-			&& str_starts_with($oldPath, self::IMAGE_DIR . '/') && is_file(JPATH_ROOT . '/' . $oldPath))
+		if ($oldFile !== null && $oldFile !== realpath($absolute))
 		{
-			File::delete(JPATH_ROOT . '/' . $oldPath);
+			File::delete($oldFile);
 		}
 
 		return $key;
+	}
+
+	/**
+	 * The absolute path of an image this plugin downloaded, so it may be deleted.
+	 *
+	 * The path comes from the article's images field, which editors can change: a path like
+	 * images/informanagement/../../configuration.php must never resolve to a file outside the folder.
+	 *
+	 * @param   string  $relative  Path relative to the site root, as stored in the article.
+	 *
+	 * @return  ?string  The resolved path, or null when it is no file inside images/informanagement.
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function ownImage(string $relative): ?string
+	{
+		if (!str_starts_with($relative, self::IMAGE_DIR . '/') || str_contains($relative, '..') || str_contains($relative, "\0"))
+		{
+			return null;
+		}
+
+		$folder = realpath(JPATH_ROOT . '/' . self::IMAGE_DIR);
+		$file   = realpath(JPATH_ROOT . '/' . $relative);
+
+		if ($folder === false || $file === false || !is_file($file) || !str_starts_with($file, $folder . \DIRECTORY_SEPARATOR))
+		{
+			return null;
+		}
+
+		return $file;
 	}
 
 	/**
