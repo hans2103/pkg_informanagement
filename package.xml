@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="package" method="upgrade">
+	<name>Informanagement</name>
+	<packagename>informanagement</packagename>
+	<author>Hans Kuijpers</author>
+	<creationDate>2026-11-25</creationDate>
+	<copyright>Copyright (C) 2026 HKweb. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>info@hkweb.nl</authorEmail>
+	<authorUrl>https://hkweb.nl</authorUrl>
+	<version>26.48.0</version>
+	<description>PKG_INFORMANAGEMENT_XML_DESCRIPTION</description>
+	<blockChildUninstall>true</blockChildUninstall>
+
+	<languages folder="language">
+		<language tag="en-GB">en-GB/pkg_informanagement.sys.ini</language>
+		<language tag="nl-NL">nl-NL/pkg_informanagement.sys.ini</language>
+	</languages>
+
+	<scriptfile>package_script.php</scriptfile>
+
+	<files>
+		<file type="plugin" id="informanagement" group="task">plg_task_informanagement.zip</file>
+		<file type="plugin" id="informanagement" group="system">plg_system_informanagement.zip</file>
+		<file type="module" id="mod_inforwijzers" client="site">mod_inforwijzers.zip</file>
+	</files>
+
+	<updateservers>
+		<server type="extension" name="Informanagement Updates">https://raw.githubusercontent.com/hans2103/pkg_informanagement/main/updates.xml</server>
+	</updateservers>
+</extension>

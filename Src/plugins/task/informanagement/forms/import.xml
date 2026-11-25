@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fields name="params">
+        <fieldset name="task_params">
+            <field name="template" type="text" required="true" label="PLG_TASK_INFORMANAGEMENT_TEMPLATE_LABEL"
+                description="PLG_TASK_INFORMANAGEMENT_TEMPLATE_DESC" pattern="^[A-Za-z0-9_\-]+$" filter="cmd"/>
+            <field name="location" type="list" default="nl" label="PLG_TASK_INFORMANAGEMENT_LOCATION_LABEL" validate="options">
+                <option value="nl">PLG_TASK_INFORMANAGEMENT_LOCATION_NL</option>
+                <option value="uk">PLG_TASK_INFORMANAGEMENT_LOCATION_UK</option>
+                <option value="de">PLG_TASK_INFORMANAGEMENT_LOCATION_DE</option>
+            </field>
+            <field name="number" type="number" default="25" min="1" max="500" step="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_NUMBER_LABEL" description="PLG_TASK_INFORMANAGEMENT_NUMBER_DESC"/>
+            <field name="notify_after" type="number" default="3" min="1" max="24" step="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_NOTIFY_AFTER_LABEL" description="PLG_TASK_INFORMANAGEMENT_NOTIFY_AFTER_DESC"/>
+            <field name="catid" type="category" extension="com_content" required="true" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_CATID_LABEL" description="PLG_TASK_INFORMANAGEMENT_CATID_DESC"/>
+            <field name="subcategories" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_SUBCATEGORIES_LABEL" description="PLG_TASK_INFORMANAGEMENT_SUBCATEGORIES_DESC">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="state" type="list" default="1" filter="integer" label="JSTATUS" validate="options">
+                <option value="1">JPUBLISHED</option>
+                <option value="0">JUNPUBLISHED</option>
+            </field>
+            <field name="created_by" type="user" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_CREATED_BY_LABEL" description="PLG_TASK_INFORMANAGEMENT_CREATED_BY_DESC"/>
+            <field name="update" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_UPDATE_LABEL" description="PLG_TASK_INFORMANAGEMENT_UPDATE_DESC">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="keep_edits" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_KEEP_EDITS_LABEL" description="PLG_TASK_INFORMANAGEMENT_KEEP_EDITS_DESC" showon="update:1">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="images" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_IMAGES_LABEL" description="PLG_TASK_INFORMANAGEMENT_IMAGES_DESC">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="image_width" type="number" default="1200" min="200" max="2400" step="100" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_IMAGE_WIDTH_LABEL" description="PLG_TASK_INFORMANAGEMENT_IMAGE_WIDTH_DESC" showon="images:1"/>
+            <field name="image_jpeg" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_IMAGE_JPEG_LABEL" description="PLG_TASK_INFORMANAGEMENT_IMAGE_JPEG_DESC" showon="images:1">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="source" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                label="PLG_TASK_INFORMANAGEMENT_SOURCE_LABEL" description="PLG_TASK_INFORMANAGEMENT_SOURCE_DESC">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+        </fieldset>
+    </fields>
+</form>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="module" client="site" method="upgrade">
+    <name>mod_inforwijzers</name>
+    <author>Hans Kuijpers</author>
+    <authorEmail>info@hkweb.nl</authorEmail>
+    <authorUrl>https://hkweb.nl</authorUrl>
+    <creationDate>2026-11-25</creationDate>
+    <copyright>(C) 2026 HKweb</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <version>26.48.0</version>
+    <description>MOD_INFORWIJZERS_XML_DESCRIPTION</description>
+
+    <namespace path="src">HKweb\Module\Inforwijzers</namespace>
+
+    <files>
+        <folder module="mod_inforwijzers">services</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+
+    <languages>
+        <language tag="en-GB">language/en-GB/mod_inforwijzers.ini</language>
+        <language tag="en-GB">language/en-GB/mod_inforwijzers.sys.ini</language>
+        <language tag="nl-NL">language/nl-NL/mod_inforwijzers.ini</language>
+        <language tag="nl-NL">language/nl-NL/mod_inforwijzers.sys.ini</language>
+    </languages>
+
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="office_id" type="number" required="true" min="1" filter="integer"
+                    label="MOD_INFORWIJZERS_OFFICE_ID_LABEL" description="MOD_INFORWIJZERS_OFFICE_ID_DESC"/>
+                <field name="code" type="text" required="true" filter="string"
+                    pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                    label="MOD_INFORWIJZERS_CODE_LABEL" description="MOD_INFORWIJZERS_CODE_DESC"/>
+                <field name="office_styles" type="radio" layout="joomla.form.field.radio.switcher" default="1" filter="integer"
+                    label="MOD_INFORWIJZERS_OFFICE_STYLES_LABEL" description="MOD_INFORWIJZERS_OFFICE_STYLES_DESC">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+            </fieldset>
+            <fieldset name="advanced">
+                <field name="layout" type="modulelayout" label="JFIELD_ALT_LAYOUT_LABEL" class="form-select" validate="moduleLayout"/>
+                <field name="moduleclass_sfx" type="textarea" label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL" rows="3" validate="CssIdentifier"/>
+            </fieldset>
+        </fields>
+    </config>
+</extension>

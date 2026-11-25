@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title><![CDATA[Informanagement RSS Feed]]></title>
+    <item>
+      <title><![CDATA[Kamer stemt in met &#39;Belastingplan&#39; &amp; novelle]]></title>
+      <description><![CDATA[<p>Eerste alinea met &euro; 900 miljoen.</p>
+
+<h4>Tussenkop</h4>
+
+<table border="1" cellpadding="1"><tr><td>a</td></tr></table>]]></description>
+      <category><![CDATA[Belastingplan]]></category>
+      <introduction><![CDATA[Eerste alinea met € 900]]></introduction>
+      <image><![CDATA[https://cdn.informanagement.com/imglib/c5be7dcc-3352-4fd5-8c0f-dd217ff601af.jpg?width=800]]></image>
+      <media:thumbnail url="https://cdn.informanagement.com/imglib/c5be7dcc-3352-4fd5-8c0f-dd217ff601af.jpg?width=200" />
+      <author><![CDATA[Informanagement bv]]></author>
+      <pubDate>Fri, 13 Nov 2026 05:00:00 +0100</pubDate>
+      <id>69253</id>
+      <date>Thu, 12 Nov 2026 00:00:00 +0100</date>
+      <destination>journaal</destination>
+      <sourceArticleId>69253</sourceArticleId>
+    </item>
+    <item>
+      <title><![CDATA[Herziene versie van een ouder bericht]]></title>
+      <description><![CDATA[<p>Alleen een alinea.</p>]]></description>
+      <category><![CDATA[Successiewet]]></category>
+      <introduction><![CDATA[]]></introduction>
+      <image><![CDATA[http://cdn.informanagement.com/imglib/6ee4968a.png?width=800]]></image>
+      <pubDate>Thu, 12 Nov 2026 05:00:00 +0100</pubDate>
+      <id>69300</id>
+      <date></date>
+      <destination>journaal</destination>
+      <sourceArticleId>69225</sourceArticleId>
+    </item>
+    <item>
+      <title><![CDATA[Item zonder id wordt overgeslagen]]></title>
+      <description><![CDATA[<p>x</p>]]></description>
+      <pubDate>Thu, 12 Nov 2026 05:00:00 +0100</pubDate>
+      <id></id>
+    </item>
+  </channel>
+</rss>

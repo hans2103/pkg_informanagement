@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="task" method="upgrade">
+    <name>plg_task_informanagement</name>
+    <author>Hans Kuijpers</author>
+    <authorEmail>info@hkweb.nl</authorEmail>
+    <authorUrl>https://hkweb.nl</authorUrl>
+    <creationDate>2026-11-25</creationDate>
+    <copyright>(C) 2026 HKweb</copyright>
+    <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+    <version>26.48.0</version>
+    <description>PLG_TASK_INFORMANAGEMENT_XML_DESCRIPTION</description>
+
+    <namespace path="src">HKweb\Plugin\Task\Informanagement</namespace>
+
+    <files>
+        <folder plugin="informanagement">services</folder>
+        <folder>forms</folder>
+        <folder>sql</folder>
+        <folder>src</folder>
+    </files>
+
+    <languages>
+        <language tag="en-GB">language/en-GB/plg_task_informanagement.ini</language>
+        <language tag="en-GB">language/en-GB/plg_task_informanagement.sys.ini</language>
+        <language tag="nl-NL">language/nl-NL/plg_task_informanagement.ini</language>
+        <language tag="nl-NL">language/nl-NL/plg_task_informanagement.sys.ini</language>
+    </languages>
+
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/mysql/install.sql</file>
+        </sql>
+    </install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/mysql/uninstall.sql</file>
+        </sql>
+    </uninstall>
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/mysql/updates</schemapath>
+        </schemas>
+    </update>
+</extension>
