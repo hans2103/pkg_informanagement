@@ -546,11 +546,14 @@ final class Importer
 		$images = json_decode((string) $article->images, true) ?: [];
 		$old    = (string) ($images['image_fulltext'] ?? '');
 
-		$response = $this->downloadImage($url);
-
-		if ($response === null)
+		// The image is optional: a failed download skips it, not the whole article.
+		try
 		{
-			($this->log)(\sprintf('Afbeelding van artikel %d overgeslagen: doorverwijzing buiten Informanagement.', $item->id), 'warning');
+			$response = $this->downloadImage($url);
+		}
+		catch (\Throwable $e)
+		{
+			($this->log)(\sprintf('Afbeelding van artikel %d overgeslagen: %s', $item->id, $e->getMessage()), 'warning');
 
 			return $current;
 		}
@@ -703,17 +706,32 @@ final class Importer
 	 *
 	 * @param   string  $url  The image URL, already checked with isInformanagementUrl().
 	 *
-	 * @return  ?\Joomla\Http\Response  The final response, or null when a redirect leaves Informanagement or there are too many.
+	 * @return  \Joomla\Http\Response  The final response.
+	 *
+	 * @throws  \RuntimeException  When a redirect leaves Informanagement, there are too many, the image is
+	 *                             larger than MAX_IMAGE or the download fails.
 	 *
 	 * @since   __DEPLOY_VERSION__
 	 */
-	private function downloadImage(string $url): ?\Joomla\Http\Response
+	private function downloadImage(string $url): \Joomla\Http\Response
 	{
-		$http = $this->http(false);
+		$tooLarge = false;
+		$http     = $this->imageHttp($tooLarge);
 
 		for ($hops = 0; $hops <= 3; $hops++)
 		{
-			$response = $http->get($url, [], 30);
+			try
+			{
+				$response = $http->get($url, [], 30);
+			}
+			catch (\RuntimeException $e)
+			{
+				// The callback, or CURLOPT_MAXFILESIZE ("Maximum file size exceeded").
+				$large = $tooLarge || stripos($e->getMessage(), 'file size') !== false;
+
+				throw $large ? new \RuntimeException('groter dan 8 MB.', 0, $e) : $e;
+			}
+
 			$status   = $response->getStatusCode();
 			$location = trim($response->getHeaderLine('Location'));
 
@@ -730,13 +748,54 @@ final class Importer
 
 			if (!$this->isInformanagementUrl($location))
 			{
-				return null;
+				throw new \RuntimeException('doorverwijzing buiten Informanagement.');
 			}
 
 			$url = $location;
 		}
 
-		return null;
+		throw new \RuntimeException('te veel doorverwijzingen.');
+	}
+
+	/**
+	 * The HTTP client for images: no automatic redirects, and curl stops a download above MAX_IMAGE.
+	 *
+	 * Without the limit the whole response would be in memory before its size is checked. The Socket
+	 * transport always follows redirects, so only Curl and Stream are used; Stream (only without curl)
+	 * has no size limit during the download, the size is then checked afterwards.
+	 *
+	 * @param   bool  $tooLarge  Set to true when curl stopped a download for its size.
+	 *
+	 * @return  \Joomla\Http\Http
+	 *
+	 * @since   __DEPLOY_VERSION__
+	 */
+	private function imageHttp(bool &$tooLarge): \Joomla\Http\Http
+	{
+		$max = self::MAX_IMAGE;
+
+		// A plain array: a Registry would read the key transport.curl as a path.
+		$options = [
+			'userAgent'       => (new Version)->getUserAgent('Joomla', true, false),
+			'follow_location' => false,
+			'transport.curl'  => [
+				// Refused at once when the server announces the size.
+				\CURLOPT_MAXFILESIZE      => $max,
+				\CURLOPT_NOPROGRESS       => false,
+				\CURLOPT_XFERINFOFUNCTION => static function ($ch, int $total, int $now) use ($max, &$tooLarge): int {
+					if ($total > $max || $now > $max)
+					{
+						$tooLarge = true;
+
+						return 1;
+					}
+
+					return 0;
+				},
+			],
+		];
+
+		return $this->httpFactory->getHttp($options, ['Curl', 'Stream']);
 	}
 
 	/**
@@ -786,28 +845,18 @@ final class Importer
 	}
 
 	/**
-	 * An HTTP client with the Joomla user agent.
-	 *
-	 * @param   bool  $followRedirects  False: the client returns a redirect instead of following it.
+	 * An HTTP client with the Joomla user agent, for the feeds.
 	 *
 	 * @return  \Joomla\Http\Http
 	 *
 	 * @since   1.0.0
 	 */
-	private function http(bool $followRedirects = true): \Joomla\Http\Http
+	private function http(): \Joomla\Http\Http
 	{
 		$options = new Registry;
 		$options->set('userAgent', (new Version)->getUserAgent('Joomla', true, false));
 
-		if ($followRedirects)
-		{
-			return $this->httpFactory->getHttp($options);
-		}
-
-		// The Socket transport always follows redirects; Curl and Stream honour follow_location.
-		$options->set('follow_location', false);
-
-		return $this->httpFactory->getHttp($options, ['Curl', 'Stream']);
+		return $this->httpFactory->getHttp($options);
 	}
 
 	/**
