@@ -1,3 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <updates>
+<update>
+  <name>Informanagement</name>
+  <description>Informanagement tax news and InforWijzers in Joomla: imports the news as articles, redirects ?im_id= links and shows the InforWijzers</description>
+  <element>pkg_informanagement</element>
+  <type>package</type>
+  <version>26.48.0</version>
+  <infourl title="Informanagement">https://github.com/hans2103/pkg_informanagement</infourl>
+  <downloads>
+    <downloadurl type="full" format="zip">https://github.com/hans2103/pkg_informanagement/releases/download/v26.48.0/pkg_informanagement-26.48.0.zip</downloadurl>
+  </downloads>
+  <sha512>6e137fe1afa0cf58c43a2c474007a23dd1eff208e54cf88494d0c772dde496f02cdd35baa077f591f1ef66c57b57c9be3350039ef8b88dce074a3dc08e7a61a7</sha512>
+  <tags>
+    <tag>stable</tag>
+  </tags>
+  <maintainer>HKweb</maintainer>
+  <maintainerurl>https://hkweb.nl</maintainerurl>
+  <section>Updates</section>
+  <targetplatform name="joomla" version="(5\.([2-9]|[1-9][0-9])|6\.[0-9])"/>
+  <php_minimum>8.3.0</php_minimum>
+  <client>site</client>
+</update>
 </updates>
