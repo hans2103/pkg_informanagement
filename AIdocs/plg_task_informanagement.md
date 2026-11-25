@@ -4,7 +4,7 @@
 - 2026-11-25: page created when the package moved from jacc.nl to its own public repo; includes the failure threshold (`notify_after`, `FailureCounter`) from 1.0.2
 
 Last updated: 2026-11-25
-Verified against: VERIFIED_SHA
+Verified against: 779881a
 Covers:
 - Src/plugins/task/informanagement/
 
